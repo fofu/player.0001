@@ -1,10 +1,10 @@
-from pygame import mixer
+import pygame
 import random
 
 class Infofolder:
      def __init__(self, infofolderdirectory, playdirectory):
-         self.infofolderdirectory = infofolderdirectory # Music File Direcctory
-         self.playdirectory = playdirectory # play File Directory
+         self.infofolderdirectory = infofolderdirectory # Info folder
+         self.playdirectory = playdirectory # Song file
          
 ##  song file contain all songs information
      def Infofile(self):
@@ -48,37 +48,11 @@ class Song:
                       break
          return songlist
      
-     def Play(self, songlink):
-         mixer.init()
-         mixer.music.load(songlink)
-         mixer.music.play()
-     
-     def Shuffle(self):
-         linklist = self.linklist
-         songname = random.choice(linklist)
-         shufflesongindex = linklist.index(songname)
-         return songindex
-
-     def Nextsong(self, songlist, songindex):
-         if songindex == len(songlist)-1:
-            nextsongindex = 0
-         else:
-              nextsongindex = songindex+1 
-         return nextsongindex
-     
-     def Previoussong(self, songlist, songindex):
-         if songindex == 0:
-            previoussongindex = len(songlist)-1
-         else:
-              previoussongindex = songindex-1
-         return previoussongindex
-
 class Artist:
      def __init__(self, infolist, linklist):
          self.infolist = infolist
          self.linklist = linklist
-         
-# Artist List
+
      def Artistlist(self, index = 0):
          artistlist = []
          infolist = self.infolist.splitlines()
@@ -140,29 +114,40 @@ class Artist:
          return artistssonglinklist
 
 class Favouritesong:
-     def __init__(self, favouritesongdiroctory, songlist):
-        self.favouritesongdiroctory = favouritesongdiroctory
+     def __init__(self, songlinklist):
+        self.linklist = songlinklist
         
-     def Like(self, songname):
-         likesongfolder = self.favouritesongdiroctory
-        
+     def Likelist(self, index = 0):
+         with open(self.favouritesongdiroctory) as likefile:
+              likefile = open(self.favouritesongdiroctory, "r")
+         filelist = likefile.readlines()
+         likelist = []
+         while True:
+               try:
+                   likelist.append(filelist[index].strip("\n"))
+                   index += 1      
+               except IndexError:
+                      break
+         return likelist
 
-     def Like(self):
-         likesongfolder = self.favouritesongdiroctory
-         with open(likesongfolder, "r") as likefile:
-              likefile = open(likesongfolder , "r")
-         likelist = likefile.readlines()
-         if likedsong in likelist:
-            pass
-         else:
-               with open(likesongfolder, "a") as likefile:
-                    likefile = open(likesongfolder , "a")
-               likefile.write("{}\n".format(likedsong))
+# like song link list
+     def Linklist(self, likelist, index = 0):
+         linklist = []
+         while True:
+               try:
+                   songname = likelist[index]
+                   for link in self.linklist:
+                       if songname in link:
+                          linklist.append(link)
+                   index += 1
+               except IndexError:
+                      break
+         return linklist
 
 ##  lyrics file contains the lyrics
 class Lyrics:
      def __init__(self, lyricsfolderdirectory):
-        self.lyricsfolderdirectory = lyricsfolderdirectory # Lyrics File Directory
+        self.lyricsfolderdirectory = lyricsfolderdirectory #Lyrics File Directory
 
      def Show(self, songlist, songindex):
          lyricsfolderdirectory = self.lyricsfolderdirectory
@@ -183,7 +168,45 @@ class Page:
          print("\n{}:".format(self.artistlist[pageindex]))
          artistsonglist = self.artistsonglist[pageindex]
          return artistsonglist
-     
+
+class Function:
+     def __init__(self, linklist, favouritesongdiroctory):
+         self.linklist = linklist
+         self.favouritesongdiroctory = favouritesongdiroctory
+         
+     def Play(self, songlink):
+         pygame.mixer.init()
+         pygame.mixer.music.load(songlink)
+         pygame.mixer.music.play()
+         
+     def Select(self, select):
+         if type(select) is str:
+            for link in self.linklist:
+                if select in link:
+                   songlink = link
+                   return songlink
+                if select == "shuffle":
+                     songlink = random.choice(self.linklist)
+                     return songlink                    
+                elif select == "previous":
+                     songlink = self.linklist
+                     return songlink    
+                elif select == "next":
+                     songlink = self.linklist
+                     return songlink
+                else:
+                     return select
+                    
+     def Push(self, push):
+         if push == "pause":
+              pygame.mixer.music.pause()
+         elif push == "resume":
+              pygame.mixer.music.unpause()
+         elif push == "stop":
+              pygame.mixer.music.stop()
+         else:
+              return push
+
 class UserInterface:
      def __init__(self, songlist, artistlist, artistsonglist):
          self.songlist = songlist
@@ -198,92 +221,63 @@ class UserInterface:
                except IndexError:
                       break
          return "{} {}\n".format(len(List), gener)
-                    
-     def Nowplaying(self, songlist, songindex): 
-         artistlist = self.artistlist
-         artistsonglist = self.artistsonglist
-         songname = songlist[songindex]
-         for List in artistsonglist:
-             if songname in List:
-                artistname = artistlist[artistsonglist.index(List)] 
-         return "\nNow playing:\n{}\n{}\n".format(songname, artistname)
+
+     def Playingnow(self, songlink, songlist, artistlist):
+         pass
 
 def main():     
       ##objects
       infofolder = Infofolder("D:\\little python projects\Player\infofolder\songfile.txt", "C:\\Users\Muwaffuq\Music\\")
       song = Song(infofolder.Infofile())
       artist = Artist(infofolder.Infofile(), infofolder.Linklist())
-      favourite = Favouritesong("D:\\little python projects\Player\\Favouritesong\\likefile.txt", song.Songlist())
+      favourite = Favouritesong(infofolder.Linklist())
       lyrics = Lyrics("D:\\little python projects\Player\Lyricsfolder")
       page = Page(song.Songlist(), artist.Artistlist(), artist.Artistsonglist(song.Songlist(), artist.Artistlist()))
+      function = Function(infofolder.Linklist(), "D:\\little python projects\Player\\Favouritesong\\likefile.txt")
       ui = UserInterface(song.Songlist(), artist.Artistlist(), artist.Artistsonglist(song.Songlist(), artist.Artistlist()))
 
-
-
-      print(ui.Show(song.Songlist()))
-      favourite.Like(song.Songlist(), 1)
-      print(ui.Show(favourite.Likelist(), "Favourite song"))
-
-
-'''
       ##app body
-      select = input("songs artists\n")
+      while True:
+      selection = input("songs artists likelist\n")
 
-      if select == "songs":
-         songlist = song.Songlist()  # song list
+      if selection == "songs":
+         songlist = song.Songlist() # song list
          print(ui.Show(songlist, "songs"))
-         songindex = song.Songlist().index(input("songname:\n"))
-         linklist = infofolder.Linklist() # link list
-         songlink = linklist[songindex] # song link
-         song.Play(songlink) # play
-         print(ui.Nowplaying(songlist, songindex)) # now playing
+         songname = input("songname:\n") # song name
+                 
+         songindex = songlist.index(songname) # song index
+         function.Play(songlink) # select button
 
-      elif select == "artists":
+      elif selection == "artists":
            artistlist = artist.Artistlist() # artist list
            print(ui.Show(artistlist, "artists"))
-           artistindex = artistlist.index(input("artistname:\n")) # artist index
+           artistname = input("artistname:\n") # artist name
+           artistindex = artistlist.index(artistname) # artist index
            songlist = page.Artistsongpage(artistindex) # song list
            print(ui.Show(songlist, "songs"))
-           songindex = songlist.index(input("songname:\n"))
+           songindex = songlist.index(input("songname:\n")) # song index
            artistsonglist = artist.Artistsonglinklist(artist.Artistsonglist(song.Songlist(), artist.Artistlist()))
            linklist = artistsonglist[artistindex] # link list
            songlink = linklist[songindex] # song link
-           song.Play(songlink) # play
-           print(ui.Nowplaying(songlist, songindex)) # now playing
+           function.Play(songlink) # select button
+
+      elif selection == "likelist":
+           songlist = favourite.Likelist() # song list
+           print(ui.Show(songlist, "song"))
+           songname = input("songname:\n")
+           songindex = songlist.index(songname) # song index
+           linklist = favourite.Linklist(favourite.Likelist()) # link list
+           songlink = linklist[songindex] # song link
+           function.Play(songlink) # select button
            
+      ## control function
+      def control_finction(action):
+          return function.Select(function.Push(action))
+     
       while True:
+           action = input("shuffle\nprevious pause next\nlike resume stop\n")
+           control = control_finction(action)
+           function.Play(songlink)
 
-         inpt = input("shuffle next previous like lyrics\n")
-              
-         if inpt in songlist:
-            songindex = songlist.index(inpt)
-            songlink = linklist[songindex] # song link
-            song.Play(songlink) # play
-            print(ui.Nowplaying(songlist, songindex)) # now playing
-
-         elif inpt == "shuffle":
-              songlink = song.Shuffle() # song link
-              song.Play(songlink)
-              print(ui.Nowplaying(songlist, songindex)) # now playing
-
-         elif inpt == "previous":
-              previoussongindex = song.Previoussong(songlist, songindex)
-              songlink = linklist[previoussongindex] # song link
-              song.Play(songlink) # play
-              print(ui.Nowplaying(songlist, previoussongindex)) # now playing
-              songindex = previoussongindex
-
-         elif inpt == "next":
-              nextsongindex = song.Nextsong(songlist, songindex)
-              songlink = linklist[nextsongindex] # song link
-              song.Play(songlink) # play
-              print(ui.Nowplaying(songlist, nextsongindex)) # now playing
-              songindex = nextsongindex
-              
-         elif inpt == "lyrics":
-              print(lyrics.Show(songlist, songindex)) # lyrics   
-         else:
-              continue
-'''
-if __name__ == '__main__': 
-    main()
+if __name__ == "__main__": 
+   main()
